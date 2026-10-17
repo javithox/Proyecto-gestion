@@ -1,0 +1,7 @@
+3. Modelo de base de datos
+Para empezar, propongo estas tablas en PostgreSQL:
+Tabla	Propósito
+equipos	Datos técnicos y administrativos de las máquinas.
+componentes	Componentes asociados a cada equipo.
+ubicaciones	Áreas y líneas de producción.
+historial_equipos	Registro de cambios relevantes en la ficha del equipo.
