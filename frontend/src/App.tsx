@@ -107,16 +107,16 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand"><div className="brand-icon"><Factory size={22}/></div><div><strong>MaintControl</strong><span>GESTIÓN INDUSTRIAL</span></div></div>
+        <div className="brand"><div className="brand-icon"><Factory size={22}/></div><div><strong>Panel de Control</strong><span>GESTIÓN INDUSTRIAL</span></div></div>
         <div className="nav-caption">MANTENIMIENTO</div>
         <div className="nav-item active"><Boxes size={18}/><span>Catastro de equipos</span><span className="nav-count">{equipos.length}</span></div>
         <div className="nav-item disabled"><ClipboardList size={18}/><span>Planes preventivos</span><span className="soon">Próximo</span></div>
         <div className="nav-item disabled"><Activity size={18}/><span>Órdenes de trabajo</span><span className="soon">Próximo</span></div>
-        <div className="sidebar-bottom"><div className="status-dot"/><div><strong>Sistema local</strong><span>API de catastro</span></div></div>
+        <div className="sidebar-bottom"><div className="status-dot"/><div><strong>Sistema de produccion de alimentos</strong><span>API de sistema</span></div></div>
       </aside>
 
       <main className="main">
-        <header className="topbar"><div className="breadcrumb">Mantenimiento <span>/</span> <strong>Catastro de equipos</strong></div><div className="top-right"><span className="environment"><span/> Entorno de desarrollo</span><div className="avatar">MT</div></div></header>
+        <header className="topbar"><div className="breadcrumb">Mantenimiento <span>/</span> <strong>Catastro de equipos</strong></div><div className="top-right"><span className="environment"><span/> Perfil</span><div className="avatar">P</div></div></header>
         <section className="content">
           <div className="page-heading"><div><div className="eyebrow">GESTIÓN DE ACTIVOS</div><h1>Catastro de equipos</h1><p>Administra los activos de la línea principal de producción.</p></div><button className="primary-btn" onClick={abrirNuevo}><CirclePlus size={18}/> Registrar equipo</button></div>
 
