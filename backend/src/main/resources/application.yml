@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: catastro-equipos
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/catastro_db}
+    username: ${SPRING_DATASOURCE_USERNAME:catastro_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:cambiar_esta_clave}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    default-property-inclusion: non_null
+server:
+  port: ${SERVER_PORT:8080}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

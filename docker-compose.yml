@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: catastro-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: catastro_db
+      POSTGRES_USER: catastro_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambiar_esta_clave}
+    ports:
+      - "5432:5432"
+    volumes:
+      - catastro_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catastro_user -d catastro_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    container_name: catastro-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/catastro_db
+      SPRING_DATASOURCE_USERNAME: catastro_user
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-cambiar_esta_clave}
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: catastro-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  catastro_postgres_data:
