@@ -19,3 +19,21 @@ export interface Equipo {
 }
 
 export type EquipoInput = Omit<Equipo, 'id' | 'creadoEn' | 'actualizadoEn'>
+
+export interface UsuarioPerfil {
+  id: number
+  nombre: string
+  username: string
+  correo: string | null
+  codigoEmpleado: string | null
+  rol: string
+  creadoEn: string
+}
+
+export interface UsuarioAdminInput {
+  username: string
+  nombre: string
+  correo: string | null
+  codigoEmpleado: string | null
+  password: string
+}

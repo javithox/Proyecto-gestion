@@ -1,0 +1,140 @@
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { AlertTriangle, ArrowLeft, Check, LoaderCircle, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, UsersRound, X } from 'lucide-react'
+import { Link, Navigate } from 'react-router-dom'
+import AppShell from './AppShell'
+import { ApiError, usuariosAdminApi } from './api'
+import { useAuth } from './auth'
+import type { UsuarioAdminInput, UsuarioPerfil } from './types'
+
+const emptyForm: UsuarioAdminInput = { username: '', nombre: '', correo: '', codigoEmpleado: '', password: '' }
+
+export default function AdminUsersPage() {
+  const { usuario } = useAuth()
+  const [users, setUsers] = useState<UsuarioPerfil[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [editing, setEditing] = useState<UsuarioPerfil | null>(null)
+  const [form, setForm] = useState<UsuarioAdminInput>(emptyForm)
+  const [modal, setModal] = useState(false)
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try { setUsers(await usuariosAdminApi.listar()) }
+    catch (e) { setError(e instanceof Error ? e.message : 'No se pudo cargar la lista de usuarios.') }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { void loadUsers() }, [loadUsers])
+
+  if (!usuario) return <Navigate to="/login" replace />
+  if (usuario.rol !== 'ADMIN') return <Navigate to="/" replace />
+
+  function openCreate() {
+    setEditing(null)
+    setForm(emptyForm)
+    setError('')
+    setNotice('')
+    setModal(true)
+  }
+
+  function openEdit(user: UsuarioPerfil) {
+    setEditing(user)
+    setForm({ username: user.username, nombre: user.nombre, correo: user.correo ?? '', codigoEmpleado: user.codigoEmpleado ?? '', password: '' })
+    setError('')
+    setNotice('')
+    setModal(true)
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSaving(true)
+    setError('')
+    setNotice('')
+    const payload: UsuarioAdminInput = {
+      ...form,
+      username: form.username.trim(),
+      nombre: form.nombre.trim(),
+      correo: form.correo?.trim() || null,
+      codigoEmpleado: form.codigoEmpleado?.trim() || null,
+      password: form.password,
+    }
+    try {
+      if (editing) await usuariosAdminApi.actualizar(editing.id, payload)
+      else await usuariosAdminApi.crear(payload)
+      setModal(false)
+      setNotice(editing ? 'Los datos del usuario se actualizaron correctamente.' : 'El usuario se registró correctamente.')
+      await loadUsers()
+    } catch (e) {
+      const message = e instanceof ApiError || e instanceof Error ? e.message : 'No se pudo guardar el usuario.'
+      setError(message)
+    } finally { setSaving(false) }
+  }
+
+  async function remove(user: UsuarioPerfil) {
+    if (!window.confirm(`¿Eliminar la cuenta "${user.username}"? Esta acción no se puede deshacer.`)) return
+    setError('')
+    setNotice('')
+    try {
+      await usuariosAdminApi.eliminar(user.id)
+      setUsers(current => current.filter(item => item.id !== user.id))
+      setNotice(`La cuenta ${user.username} fue eliminada.`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo eliminar el usuario.')
+    }
+  }
+
+  return (
+    <AppShell active="perfil">
+      <div className="page-heading">
+        <div><div className="eyebrow">ADMINISTRACIÓN Y ACCESO</div><h1>Gestión de usuarios</h1><p>Registra, edita o elimina cuentas de acceso al catastro.</p></div>
+        <Link className="secondary-btn" to="/perfil"><ArrowLeft size={16} /> Volver al perfil</Link>
+      </div>
+      {error && <div className="error-banner"><AlertTriangle size={18}/><span>{error}</span><button type="button" onClick={() => setError('')}>Cerrar</button></div>}
+      {notice && <div className="notice"><Check size={17}/><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Cerrar aviso"><X size={15}/></button></div>}
+      <section className="panel">
+        <div className="panel-heading">
+          <div><h2><UsersRound size={17} style={{verticalAlign:'-3px', marginRight:8}}/>Usuarios registrados</h2><p>Las cuentas normales no pueden acceder a esta pantalla ni a su API.</p></div>
+          <div className="admin-toolbar">
+            <button className="secondary-btn" type="button" onClick={() => void loadUsers()} disabled={loading}><RefreshCw size={15}/> Actualizar</button>
+            <button className="primary-btn" type="button" onClick={openCreate}><Plus size={16}/> Registrar usuario</button>
+          </div>
+        </div>
+        {loading ? <div className="admin-loading"><LoaderCircle className="spin" size={22}/> Cargando usuarios…</div> :
+          <div className="table-wrap"><table className="admin-users-table">
+            <thead><tr><th>USUARIO</th><th>NOMBRE</th><th>CORREO</th><th>ROL</th><th>ACCIONES</th></tr></thead>
+            <tbody>{users.map(user => {
+              const protectedAdmin = user.rol === 'ADMIN'
+              return <tr key={user.id}>
+                <td><strong>{user.username}</strong>{protectedAdmin && <span className="admin-protected"><ShieldCheck size={12}/> Protegida</span>}</td>
+                <td>{user.nombre}</td><td>{user.correo || '—'}</td><td><span className={`user-role ${protectedAdmin ? 'admin' : ''}`}>{user.rol}</span></td>
+                <td><div className="actions">
+                  <button type="button" title={protectedAdmin ? 'Cuenta administradora protegida' : 'Editar usuario'} aria-label={`Editar ${user.username}`} disabled={protectedAdmin} onClick={() => openEdit(user)}><Pencil size={14}/></button>
+                  <button type="button" title={protectedAdmin ? 'No se puede eliminar al administrador' : 'Eliminar usuario'} aria-label={`Eliminar ${user.username}`} disabled={protectedAdmin} onClick={() => void remove(user)}><Trash2 size={14}/></button>
+                </div></td>
+              </tr>
+            })}</tbody>
+          </table>{users.length === 0 && <div className="admin-loading">No hay usuarios registrados.</div>}</div>}
+        <div className="table-footer"><span>{users.length} cuenta(s)</span><span><ShieldCheck size={12} style={{verticalAlign:'-2px'}}/> Acceso exclusivo de administrador</span></div>
+      </section>
+      {modal && <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !saving) setModal(false) }}>
+        <section className="modal admin-user-modal" role="dialog" aria-modal="true" aria-labelledby="user-modal-title">
+          <div className="modal-header"><div><div className="eyebrow">{editing ? 'EDITAR CUENTA' : 'NUEVA CUENTA'}</div><h2 id="user-modal-title">{editing ? 'Editar usuario' : 'Registrar usuario'}</h2><p>{editing ? 'Deja la contraseña vacía para conservar la actual.' : 'La nueva cuenta tendrá permisos de usuario estándar.'}</p></div><button type="button" className="icon-btn" onClick={() => setModal(false)} disabled={saving} aria-label="Cerrar"><X/></button></div>
+          <form onSubmit={event => void submit(event)}>
+            <div className="form-grid">
+              <label className="field"><span>Nombre de usuario *</span><input required minLength={3} maxLength={80} autoComplete="off" value={form.username} onChange={e => setForm({...form, username:e.target.value})}/></label>
+              <label className="field"><span>Nombre completo *</span><input required maxLength={160} value={form.nombre} onChange={e => setForm({...form, nombre:e.target.value})}/></label>
+              <label className="field"><span>Correo electrónico</span><input type="email" maxLength={320} value={form.correo ?? ''} onChange={e => setForm({...form, correo:e.target.value})}/></label>
+              <label className="field"><span>Código de empleado</span><input maxLength={60} value={form.codigoEmpleado ?? ''} onChange={e => setForm({...form, codigoEmpleado:e.target.value})}/></label>
+              <label className="field wide"><span>{editing ? 'Nueva contraseña (opcional)' : 'Contraseña inicial *'}</span><input type="password" autoComplete="new-password" required={!editing} minLength={12} maxLength={72} value={form.password} onChange={e => setForm({...form, password:e.target.value})} placeholder={editing ? 'Dejar vacía para no cambiarla' : 'Mínimo 12 caracteres'}/></label>
+            </div>
+            <div className="form-note">La cuenta administradora no se puede modificar ni eliminar desde esta pantalla.</div>
+            <div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setModal(false)} disabled={saving}>Cancelar</button><button className="primary-btn" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear usuario'}</button></div>
+          </form>
+        </section>
+      </div>}
+    </AppShell>
+  )
+}

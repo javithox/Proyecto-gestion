@@ -1,64 +1,57 @@
-# Catastro de Equipos — Mantenimiento Industrial
+# Catastro de Equipos — MaintControl
 
-MVP inicial para el Caso 9: Mantenimiento industrial. Incluye frontend React + TypeScript, API REST con Java 21 y Spring Boot, PostgreSQL y Docker Compose.
+Aplicación monolítica para mantenimiento industrial: una aplicación Spring Boot sirve la interfaz React/Vite y la API REST; PostgreSQL conserva equipos, cuentas y sesiones.
 
-## Requisitos
-- Docker Engine y Docker Compose plugin
-- (Opcional para desarrollo fuera de Docker) Node.js 22+ y Java 21
+## Inicio rápido
 
-## Inicio rápido con Docker
+1. Copia `.env.example` como `.env`.
+2. Define contraseñas únicas para `POSTGRES_PASSWORD` y `APP_ADMIN_PASSWORD` (mínimo 12 caracteres y máximo 72 bytes UTF-8). Completa, si corresponde, el nombre, correo y código de empleado del administrador inicial.
+3. Ejecuta `docker compose up --build -d`.
+4. Abre `http://localhost:3000` e inicia sesión con `APP_ADMIN_USERNAME` (por defecto `admin`) y la contraseña configurada.
 
-```bash
-cp .env.example .env
-# Edita .env y define una contraseña segura
-docker compose up --build -d
-docker compose ps
-```
+En el primer arranque, la aplicación guarda el administrador en PostgreSQL y la base le asigna un ID. La contraseña se guarda como hash BCrypt, nunca en texto plano. La cuenta de bootstrap se crea solo si la base aún no tiene usuarios; cambiar las variables después no modifica la contraseña guardada.
 
-URLs:
-- Frontend: http://localhost:3000
-- API: http://localhost:8080/api/equipos
-- PostgreSQL: localhost:5432 (para herramientas locales)
+Cuando no existe ninguna cuenta, `/login` muestra una pantalla de configuración inicial para crear una única cuenta administradora. Tras guardar el primer usuario, esa pantalla queda desactivada y se usa el login normal. No hay registro abierto para cuentas adicionales. En una instalación pública, preaprovisiona al administrador mediante variables de entorno y no expongas la aplicación sin credenciales iniciales.
 
-El frontend usa Nginx como proxy para enviar `/api` al backend dentro de Docker. No necesita conectarse directamente a PostgreSQL.
+## Login, sesión y perfil
 
-## Persistencia
-Los datos se guardan en el volumen nombrado `catastro_postgres_data`. `docker compose down` no elimina el volumen. **No ejecutes `docker compose down -v` si quieres conservar los datos.**
+El acceso es normal con nombre de usuario o correo y contraseña. Las sesiones aleatorias se almacenan en PostgreSQL; el navegador solo conserva una cookie HttpOnly con expiración y logout revocable. La API del catastro exige una sesión válida. El avatar lleva a `/perfil`, que muestra el ID interno, nombre, usuario, correo, código de empleado si está definido, rol y fecha de creación. Desde allí se puede cerrar sesión.
+
+Para agregar otras cuentas después del administrador inicial se necesita una pantalla administrativa, que no forma parte de este alcance; no habilité registro público. Las contraseñas nunca deben insertarse en la base como texto plano.
+
+En Compose local por HTTP se usa explícitamente `APP_COOKIE_SECURE=false`. Para un entorno público HTTPS define `APP_COOKIE_SECURE=true`, que emite la cookie como `SameSite=None; Secure`. Usa TLS y mantén `.env` fuera del control de versiones.
+
+## Arquitectura y ejecución
+
+- `frontend/`: React, TypeScript y Vite; durante Preview, Vite sirve el frontend en el puerto 3000 y hace proxy relativo de `/api` hacia Spring Boot.
+- `backend/`: API, autenticación, perfiles, sesiones y persistencia JPA.
+- `Dockerfile`: build multi-stage que compila React e incorpora `dist` en `backend/src/main/resources/static`; la imagen final contiene un solo servidor Spring Boot en el puerto 3000.
+- `docker-compose.yml`: un contenedor de aplicación y PostgreSQL. El volumen `catastro_postgres_data` conserva la información.
+
+El acceso local a PostgreSQL queda expuesto en `localhost:5432`. No ejecutes `docker compose down -v` si quieres conservar los datos.
 
 ## API
-- `GET /api/equipos` — lista todos; acepta `q`, `estado` y `criticidad`
-- `GET /api/equipos/{id}` — detalle
-- `POST /api/equipos` — crea
-- `PUT /api/equipos/{id}` — actualiza
-- `PATCH /api/equipos/{id}/estado` — cambia estado
-- `DELETE /api/equipos/{id}` — baja lógica (marca como `BAJA`, no borra físicamente)
 
-Ejemplo de creación:
+Autenticación: `GET /api/auth/setup-status`, `POST /api/auth/setup` (solo mientras no exista ninguna cuenta), `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`. El perfil devuelto incluye el ID generado por la base. El catastro permanece bajo `/api/equipos`:
 
-```json
-{
-  "codigo": "EQ-001",
-  "nombre": "Cinta transportadora principal",
-  "descripcion": "Transporte de producto en línea principal",
-  "marca": "Ejemplo",
-  "modelo": "CT-100",
-  "numeroSerie": "SN-001",
-  "fechaAdquisicion": "2024-03-15",
-  "criticidad": "ALTA",
-  "estado": "OPERATIVO",
-  "ubicacion": "Línea principal - Envasado",
-  "condicionesOperacion": "Operación continua; limpieza según procedimiento"
-}
-```
+- `GET /api/equipos` — lista; acepta `q`, `estado` y `criticidad`.
+- `GET /api/equipos/{id}` — detalle.
+- `POST /api/equipos` — crea.
+- `PUT /api/equipos/{id}` — actualiza.
+- `PATCH /api/equipos/{id}/estado` — cambia estado.
+- `DELETE /api/equipos/{id}` — baja lógica (marca como `BAJA`, no borra físicamente).
 
-Valores admitidos:
-- `criticidad`: `ALTA`, `MEDIA`, `BAJA`
-- `estado`: `OPERATIVO`, `DETENIDO`, `EN_MANTENIMIENTO`, `BAJA`
+Valores admitidos: `criticidad` = `ALTA`, `MEDIA`, `BAJA`; `estado` = `OPERATIVO`, `DETENIDO`, `EN_MANTENIMIENTO`, `BAJA`.
 
-## Desarrollo local sin Docker (opcional)
-1. Inicia PostgreSQL y crea una base `catastro_db`, usuario `catastro_user`.
-2. En `backend`, define las variables `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` y ejecuta `./mvnw spring-boot:run` si agregas Maven Wrapper, o `mvn spring-boot:run`.
-3. En `frontend`, ejecuta `npm install` y `npm run dev`. En modo Vite el proxy `/api` apunta a `http://localhost:8080`.
+## Desarrollo sin Docker
 
-## Alcance inicial
-Incluye datos básicos de equipos y baja lógica. Los módulos de componentes, ubicaciones normalizadas, historial auditable, usuarios/roles, planes preventivos, órdenes de trabajo y reportes se dejan para iteraciones siguientes. No incluye mantenimiento predictivo con IA.
+Usa Java 21 y Maven desde la raíz: `SERVER_PORT=8080 mvn -f backend/pom.xml spring-boot:run`. Si se definen `APP_ADMIN_USERNAME` y `APP_ADMIN_PASSWORD`, se crea una cuenta de bootstrap al iniciar; si no hay usuarios, `/login` permite configurar la cuenta inicial de desarrollo. Sin `SPRING_DATASOURCE_URL`, Spring usa H2 en memoria; para persistencia configura PostgreSQL. En otra terminal ejecuta `npm install && npm run dev` desde `frontend` (Vite escucha el puerto 3000 y envía `/api` a Spring en el puerto 8080).
+
+# Usuario de la aplicacion
+
+## Usuario administrador
+
+# nombre usuario= admin
+# contraseña = admin123456789.
+
+es para que se opere la plataforma
