@@ -38,11 +38,11 @@ export default function LoginPage() {
 
   return (
     <main className="auth-screen">
-      <div className="login-brand"><div className="brand-icon"><Factory size={23} /></div><div><strong>MaintControl</strong><span>GESTIÓN INDUSTRIAL</span></div></div>
+      <div className="login-brand"><div className="brand-icon"><Factory size={23} /></div><div><strong>Control Principal</strong><span>GESTIÓN INDUSTRIAL</span></div></div>
       <section className="login-card" aria-labelledby="login-title">
         <div className="login-mark"><ShieldCheck size={23} /></div>
-        <div className="eyebrow">{needsSetup ? 'CONFIGURACIÓN INICIAL' : 'ACCESO AL SISTEMA'}</div>
-        <h1 id="login-title">{needsSetup ? 'Crear cuenta administradora' : 'Catastro de equipos'}</h1>
+        <div className="eyebrow">{needsSetup ? 'CONFIGURACIÓN INICIAL' : 'INGRESO AL SISTEMA'}</div>
+        <h1 id="login-title">{needsSetup ? 'Crear cuenta administradora' : 'Iniciar Sesion'}</h1>
         <p className="login-description">{needsSetup ? 'Crea la primera cuenta. Se guardará en la base de datos con su ID de usuario y habilitará el login.' : 'Ingresa con tus credenciales para revisar y administrar los activos de la planta.'}</p>
         {loggedOut && <div className="login-message success">Sesión cerrada correctamente.</div>}
         {(error || sessionError) && <div className="login-message failure"><AlertTriangle size={16} /><span>{error || sessionError}</span></div>}

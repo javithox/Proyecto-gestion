@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Activity, AlertTriangle, Boxes, Check, ChevronDown, CirclePlus, ClipboardList, Factory, Filter, LoaderCircle, Pencil, Search, ShieldAlert, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Boxes, Check, ChevronDown, CirclePlus, Factory, Filter, LoaderCircle, Pencil, Search, ShieldAlert, Trash2, X } from 'lucide-react'
 import type { FormEvent, ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { equiposApi } from './api'
-import { useAuth } from './auth'
+import AppShell from './AppShell'
 import type { Criticidad, Equipo, EquipoInput, EstadoEquipo } from './types'
 
 const emptyForm: EquipoInput = {
@@ -25,7 +24,6 @@ const estadoLabel = (value: EstadoEquipo) => estados.find(x => x.value === value
 const critLabel = (value: Criticidad) => criticidades.find(x => x.value === value)?.label ?? value
 
 export default function EquipmentPage() {
-  const { usuario } = useAuth()
   const [equipos, setEquipos] = useState<Equipo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -121,19 +119,7 @@ export default function EquipmentPage() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand"><div className="brand-icon"><Factory size={22}/></div><div><strong>MaintControl</strong><span>GESTIÓN INDUSTRIAL</span></div></div>
-        <div className="nav-caption">MANTENIMIENTO</div>
-        <div className="nav-item active"><Boxes size={18}/><span>Catastro de equipos</span><span className="nav-count">{equipos.length}</span></div>
-        <div className="nav-item disabled"><ClipboardList size={18}/><span>Planes preventivos</span><span className="soon">Próximo</span></div>
-        <div className="nav-item disabled"><Activity size={18}/><span>Órdenes de trabajo</span><span className="soon">Próximo</span></div>
-        <div className="sidebar-bottom"><div className="status-dot"/><div><strong>Sesión protegida</strong><span>Cuenta autenticada</span></div></div>
-      </aside>
-
-      <main className="main">
-        <header className="topbar"><div className="breadcrumb">Mantenimiento <span>/</span> <strong>Catastro de equipos</strong></div><div className="top-right"><span className="environment"><span/> Sesión activa</span><Link to="/perfil" className="avatar profile-link" aria-label={`Abrir perfil de ${usuario?.nombre ?? 'usuario'}`} title="Mi perfil">{initials(usuario?.nombre ?? '')}</Link></div></header>
-        <section className="content">
+    <AppShell active="equipos" equipmentCount={equipos.length}>
           <div className="page-heading"><div><div className="eyebrow">GESTIÓN DE ACTIVOS</div><h1>Catastro de equipos</h1><p>Administra los activos de la línea principal de producción.</p></div><button className="primary-btn" onClick={abrirNuevo}><CirclePlus size={18}/> Registrar equipo</button></div>
 
           {notice && <div className="notice"><Check size={17}/>{notice}<button aria-label="Cerrar aviso" onClick={() => setNotice('')}><X size={16}/></button></div>}
@@ -172,9 +158,6 @@ export default function EquipmentPage() {
             <div className="table-footer"><span>{equipos.length} registro(s)</span><span>Los datos se guardan en PostgreSQL</span></div>
           </section>
           <footer>Catastro de equipos <span>•</span> MVP de mantenimiento industrial</footer>
-        </section>
-      </main>
-
       {modal && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setModal(false) }}>
         <section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <div className="modal-header"><div><div className="eyebrow">{editing ? 'ACTUALIZACIÓN DE ACTIVO' : 'NUEVO ACTIVO'}</div><h2 id="modal-title">{editing ? 'Editar equipo' : 'Registrar equipo'}</h2><p>Completa los datos técnicos y operacionales.</p></div><button className="icon-btn" onClick={() => setModal(false)} aria-label="Cerrar"><X/></button></div>
@@ -197,11 +180,10 @@ export default function EquipmentPage() {
           </form>
         </section>
       </div>}
-    </div>
+    </AppShell>
   )
 }
 
-function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'U' }
 function Stat({ icon, label, value, note, color }: { icon: ReactNode; label: string; value: number; note: string; color: string }) {
   return <div className="stat-card"><div className={`stat-icon ${color}`}>{icon}</div><div className="stat-label">{label}</div><div className="stat-value">{value}</div><div className="stat-note">{note}</div></div>
 }

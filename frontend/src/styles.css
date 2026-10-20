@@ -22,3 +22,32 @@
 .admin-user-modal .form-note{line-height:1.6}
 .admin-user-modal .modal-actions .primary-btn{min-width:145px}
 @media(max-width:700px){.profile-action-buttons{width:100%;flex-direction:column;align-items:stretch}.profile-action-buttons .primary-btn,.profile-action-buttons .secondary-btn{width:100%}.admin-toolbar{width:100%;justify-content:flex-start}.panel-heading{align-items:flex-start;flex-direction:column}.admin-toolbar .primary-btn,.admin-toolbar .secondary-btn{flex:1}.admin-user-modal .form-grid{grid-template-columns:1fr}.admin-user-modal .field.wide{grid-column:auto}.admin-user-modal .modal-header{padding:19px 18px}.admin-user-modal form{padding:18px}}
+
+
+/* Navegación desplegable en tablet y móvil; mantiene la paleta y los elementos del sidebar original. */
+.topbar-start{display:flex;align-items:center;gap:12px;min-width:0}
+.menu-toggle{display:none;flex:none;width:36px;height:36px;place-items:center;border:1px solid #e0e7e9;border-radius:7px;background:#fff;color:#31515a}
+.menu-toggle:hover{background:#edf8f6;color:#087f73}
+.menu-toggle:focus-visible,.sidebar-backdrop:focus-visible{outline:3px solid #35c5ae;outline-offset:2px}
+.sidebar-backdrop{display:none}
+@media(max-width:1024px){
+  .main{margin-left:0}
+  .menu-toggle{display:grid}
+  .topbar{gap:10px}
+  .topbar-start{flex:1}
+  .breadcrumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:min(280px,84vw);height:100dvh;padding:25px 16px;transform:translateX(-100%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s;z-index:11;box-shadow:none}
+  .sidebar.is-open{transform:translateX(0);visibility:visible;transition:transform .2s ease;box-shadow:12px 0 32px #061e2430}
+  .sidebar .brand{padding:0 8px 38px}
+  .sidebar .nav-caption{display:block}
+  .sidebar .nav-item{display:flex}
+  .sidebar .sidebar-bottom{display:flex}
+  .sidebar-backdrop.visible{display:block;position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;background:#10252d80;z-index:10}
+}
+@media(max-width:700px){
+  .topbar-start{gap:9px}
+  .topbar{padding:0 12px}
+  .menu-toggle{width:34px;height:34px}
+  .breadcrumb{font-size:11px}
+  .breadcrumb span{padding:0 5px}
+}
