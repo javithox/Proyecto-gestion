@@ -1,10 +1,10 @@
 import { LoaderCircle } from 'lucide-react'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import EquipmentPage from './EquipmentPage'
-import LoginPage from './LoginPage'
-import ProfilePage from './ProfilePage'
-import AdminUsersPage from './AdminUsersPage'
-import { useAuth } from './auth'
+import LoginPage from './login/LoginPage'
+import ProfilePage from './profile/ProfilePage'
+import AdminUsersPage from './admin/AdminUsersPage'
+import { useAuth } from './auth/auth'
 
 function RequireUser() {
   const { usuario, loading } = useAuth()

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { AlertTriangle, Factory, LoaderCircle, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react'
 import { Navigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from './auth'
+import { useAuth } from '../auth/auth'
 
 export default function LoginPage() {
   const { usuario, loading, error: sessionError, needsSetup, crearCuentaInicial, iniciarSesion } = useAuth()

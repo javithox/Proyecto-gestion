@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { authApi, ApiError } from './api'
-import type { UsuarioPerfil } from './types'
+import { authApi, ApiError } from '../api'
+import type { UsuarioPerfil } from '../types'
 
 type AuthContextValue = {
   usuario: UsuarioPerfil | null

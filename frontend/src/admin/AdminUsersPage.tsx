@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { AlertTriangle, ArrowLeft, Check, LoaderCircle, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, UsersRound, X } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
-import AppShell from './AppShell'
-import { ApiError, usuariosAdminApi } from './api'
-import { useAuth } from './auth'
-import type { UsuarioAdminInput, UsuarioPerfil } from './types'
+import AppShell from '../AppShell'
+import { ApiError, usuariosAdminApi } from '../api'
+import { useAuth } from '../auth/auth'
+import type { UsuarioAdminInput, UsuarioPerfil } from '../types'
 
 const emptyForm: UsuarioAdminInput = { username: '', nombre: '', correo: '', codigoEmpleado: '', password: '' }
 

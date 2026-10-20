@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { AlertTriangle, ArrowLeft, BadgeCheck, CalendarDays, Hash, LogOut, Mail, UserRound, UsersRound } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import AppShell from './AppShell'
-import { useAuth } from './auth'
+import AppShell from '../AppShell'
+import { useAuth } from '../auth/auth'
 
 function fecha(value: string) {
   const parsed = new Date(value)

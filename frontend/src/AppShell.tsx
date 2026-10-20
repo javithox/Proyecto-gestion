@@ -2,7 +2,7 @@ import { Activity, Boxes, ClipboardList, Factory, Menu, UserRound, X } from 'luc
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from './auth'
+import { useAuth } from './auth/auth'
 
 type Props = {
   active: 'equipos' | 'perfil'
