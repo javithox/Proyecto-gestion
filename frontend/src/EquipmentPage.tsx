@@ -37,6 +37,9 @@ export default function EquipmentPage() {
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [equipoParaBaja, setEquipoParaBaja] = useState<Equipo | null>(null)
+  const [bajando, setBajando] = useState(false)
+  const [errorBaja, setErrorBaja] = useState('')
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 300)
@@ -111,11 +114,26 @@ export default function EquipmentPage() {
     } finally { setSaving(false) }
   }
 
-  async function darDeBaja(e: Equipo) {
-    if (!window.confirm(`¿Dar de baja el equipo ${e.codigo}? El registro se conservará en la base de datos.`)) return
+  function solicitarBaja(equipo: Equipo) {
+    setErrorBaja('')
+    setEquipoParaBaja(equipo)
+  }
+
+  async function confirmarBaja() {
+    if (!equipoParaBaja || bajando) return
+    const equipo = equipoParaBaja
+    setBajando(true)
+    setErrorBaja('')
     try {
-      await equiposApi.baja(e.id); setNotice(`Equipo ${e.codigo} dado de baja`); setRefreshKey(value => value + 1)
-    } catch (err) { setError(err instanceof Error ? err.message : 'No fue posible dar de baja el equipo') }
+      await equiposApi.baja(equipo.id)
+      setNotice(`Equipo ${equipo.codigo} dado de baja`)
+      setEquipoParaBaja(null)
+      setRefreshKey(value => value + 1)
+    } catch (err) {
+      setErrorBaja(err instanceof Error ? err.message : 'No fue posible dar de baja el equipo. Intenta nuevamente.')
+    } finally {
+      setBajando(false)
+    }
   }
 
   return (
@@ -150,7 +168,7 @@ export default function EquipmentPage() {
                     <td><span className={`pill critical-${e.criticidad.toLowerCase()}`}><span/>{critLabel(e.criticidad)}</span></td>
                     <td><span className={`pill status-${e.estado.toLowerCase()}`}><span/>{estadoLabel(e.estado)}</span></td>
                     <td><div className="make-model">{e.marca || '—'}<span>{e.modelo || 'Sin modelo'}</span></div></td>
-                    <td><div className="actions"><button title="Editar equipo" aria-label={`Editar ${e.codigo}`} onClick={() => abrirEdicion(e)}><Pencil size={16}/></button><button title="Dar de baja" aria-label={`Dar de baja ${e.codigo}`} onClick={() => void darDeBaja(e)} disabled={e.estado === 'BAJA'}><Trash2 size={16}/></button></div></td>
+                    <td><div className="actions"><button title="Editar equipo" aria-label={`Editar ${e.codigo}`} onClick={() => abrirEdicion(e)}><Pencil size={16}/></button><button title="Dar de baja" aria-label={`Dar de baja ${e.codigo}`} onClick={() => solicitarBaja(e)} disabled={e.estado === 'BAJA'}><Trash2 size={16}/></button></div></td>
                   </tr>)}
                 </tbody>
               </table>
@@ -178,6 +196,26 @@ export default function EquipmentPage() {
             <div className="form-note">Los campos marcados con * son obligatorios.</div>
             <div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setModal(false)}>Cancelar</button><button className="primary-btn" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={17}/> : <Check size={17}/>} {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Registrar equipo'}</button></div>
           </form>
+        </section>
+      </div>}
+      {equipoParaBaja && <div className="modal-backdrop delete-confirm-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !bajando) setEquipoParaBaja(null) }}>
+        <section className="modal delete-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-equipment-title" aria-describedby="delete-equipment-description">
+          <div className="modal-header delete-confirm-header">
+            <div className="delete-confirm-icon"><Trash2 size={21}/></div>
+            <div className="delete-confirm-heading"><div className="eyebrow">CONFIRMACIÓN DE ACCIÓN</div><h2 id="delete-equipment-title">¿Dar de baja el activo?</h2></div>
+            <button type="button" className="icon-btn" onClick={() => setEquipoParaBaja(null)} disabled={bajando} aria-label="Cerrar confirmación"><X/></button>
+          </div>
+          <div className="delete-confirm-body">
+            <p id="delete-equipment-description">El activo <strong>{equipoParaBaja.codigo} — {equipoParaBaja.nombre}</strong> quedará marcado como “De baja”. El registro no se eliminará de la base de datos.</p>
+            {errorBaja && <div className="delete-confirm-error" role="alert"><AlertTriangle size={16}/><span>{errorBaja}</span></div>}
+          </div>
+          <div className="modal-actions delete-confirm-actions">
+            <button type="button" className="secondary-btn" autoFocus onClick={() => setEquipoParaBaja(null)} disabled={bajando}>Cancelar</button>
+            <button type="button" className="danger-btn" onClick={() => void confirmarBaja()} disabled={bajando}>
+              {bajando ? <LoaderCircle className="spin" size={16}/> : <Trash2 size={16}/>}
+              {bajando ? 'Procesando…' : 'Sí, dar de baja'}
+            </button>
+          </div>
         </section>
       </div>}
     </AppShell>

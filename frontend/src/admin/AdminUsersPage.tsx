@@ -18,6 +18,9 @@ export default function AdminUsersPage() {
   const [editing, setEditing] = useState<UsuarioPerfil | null>(null)
   const [form, setForm] = useState<UsuarioAdminInput>(emptyForm)
   const [modal, setModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<UsuarioPerfil | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -73,16 +76,26 @@ export default function AdminUsersPage() {
     } finally { setSaving(false) }
   }
 
-  async function remove(user: UsuarioPerfil) {
-    if (!window.confirm(`¿Eliminar la cuenta "${user.username}"? Esta acción no se puede deshacer.`)) return
-    setError('')
+  function requestDelete(user: UsuarioPerfil) {
+    setDeleteError('')
+    setDeleteTarget(user)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deleteBusy) return
+    const target = deleteTarget
+    setDeleteBusy(true)
+    setDeleteError('')
     setNotice('')
     try {
-      await usuariosAdminApi.eliminar(user.id)
-      setUsers(current => current.filter(item => item.id !== user.id))
-      setNotice(`La cuenta ${user.username} fue eliminada.`)
+      await usuariosAdminApi.eliminar(target.id)
+      setUsers(current => current.filter(item => item.id !== target.id))
+      setNotice(`La cuenta ${target.username} y sus sesiones activas fueron eliminadas.`)
+      setDeleteTarget(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo eliminar el usuario.')
+      setDeleteError(e instanceof Error ? e.message : 'No se pudo eliminar el usuario. Intenta nuevamente.')
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
@@ -112,7 +125,7 @@ export default function AdminUsersPage() {
                 <td>{user.nombre}</td><td>{user.correo || '—'}</td><td><span className={`user-role ${protectedAdmin ? 'admin' : ''}`}>{user.rol}</span></td>
                 <td><div className="actions">
                   <button type="button" title={protectedAdmin ? 'Cuenta administradora protegida' : 'Editar usuario'} aria-label={`Editar ${user.username}`} disabled={protectedAdmin} onClick={() => openEdit(user)}><Pencil size={14}/></button>
-                  <button type="button" title={protectedAdmin ? 'No se puede eliminar al administrador' : 'Eliminar usuario'} aria-label={`Eliminar ${user.username}`} disabled={protectedAdmin} onClick={() => void remove(user)}><Trash2 size={14}/></button>
+                  <button type="button" title={protectedAdmin ? 'No se puede eliminar al administrador' : 'Eliminar usuario'} aria-label={`Eliminar ${user.username}`} disabled={protectedAdmin} onClick={() => requestDelete(user)}><Trash2 size={14}/></button>
                 </div></td>
               </tr>
             })}</tbody>
@@ -133,6 +146,26 @@ export default function AdminUsersPage() {
             <div className="form-note">La cuenta administradora no se puede modificar ni eliminar desde esta pantalla.</div>
             <div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setModal(false)} disabled={saving}>Cancelar</button><button className="primary-btn" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear usuario'}</button></div>
           </form>
+        </section>
+      </div>}
+      {deleteTarget && <div className="modal-backdrop delete-confirm-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !deleteBusy) setDeleteTarget(null) }}>
+        <section className="modal delete-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title" aria-describedby="delete-user-description">
+          <div className="modal-header delete-confirm-header">
+            <div className="delete-confirm-icon"><Trash2 size={21}/></div>
+            <div className="delete-confirm-heading"><div className="eyebrow">CONFIRMACIÓN DE ACCIÓN</div><h2 id="delete-user-title">¿Eliminar usuario?</h2></div>
+            <button type="button" className="icon-btn" onClick={() => setDeleteTarget(null)} disabled={deleteBusy} aria-label="Cerrar confirmación"><X/></button>
+          </div>
+          <div className="delete-confirm-body">
+            <p id="delete-user-description">Vas a eliminar la cuenta <strong>{deleteTarget.username}</strong> ({deleteTarget.nombre}). Esta acción no se puede deshacer y también cerrará sus sesiones activas.</p>
+            {deleteError && <div className="delete-confirm-error" role="alert"><AlertTriangle size={16}/><span>{deleteError}</span></div>}
+          </div>
+          <div className="modal-actions delete-confirm-actions">
+            <button type="button" className="secondary-btn" autoFocus onClick={() => setDeleteTarget(null)} disabled={deleteBusy}>Cancelar</button>
+            <button type="button" className="danger-btn" onClick={() => void confirmDelete()} disabled={deleteBusy}>
+              {deleteBusy ? <LoaderCircle className="spin" size={16}/> : <Trash2 size={16}/>}
+              {deleteBusy ? 'Eliminando…' : 'Sí, eliminar usuario'}
+            </button>
+          </div>
         </section>
       </div>}
     </AppShell>
